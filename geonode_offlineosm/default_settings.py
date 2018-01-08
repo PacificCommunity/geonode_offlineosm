@@ -12,6 +12,9 @@ if not hasattr(settings, 'OFFLINE_OSM_BBX'):
         [179.3, -17.1], # TOPRIGHT
     ];
 
+if not hasattr(settings, 'OFFLINE_OSM_UPDATE_INTERVAL'):
+    settings.OFFLINE_OSM_UPDATE_INTERVAL = 60*24 # 1 day
+
 if settings.OFFLINE_OSM_AS_BASE_LAYER:
     settings.MAP_BASELAYERS.append(
         {

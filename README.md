@@ -33,6 +33,9 @@ OFFLINE_OSM_BBOX = [
 # Whether Offline OSM should be made available as base layers
 # (when true, data will be downloaded after migrations (once))
 OFFLINE_OSM_AS_BASE_LAYER = True
+
+# Update period for the Celery worker (in minutes)
+OFFLINE_OSM_UPDATE_INTERVAL = 60*24 # 1 day
 ```
 
 ## Management command
@@ -42,3 +45,7 @@ To update the data, run the following management command. Be aware that will dow
 ```shell
 python manage.py updateofflineosm
 ```
+
+## Celery tasks
+
+Make sure your project configures autodiscover for Celery so that it will pickup `tasks.py`. Without this there will be no automatic updates.
