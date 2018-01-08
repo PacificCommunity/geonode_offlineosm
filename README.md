@@ -2,6 +2,8 @@
 
 **THIS IS CURRENT WORK IN PROGRESS, DO NOT USE !!!**
 
+Tested with Geonode 2.6 / Django 1.8 / Python 2 / Postgres 9.6
+
 This is an app to create offline OSM layers for geonode.
 
 ## Quickstart
@@ -36,6 +38,15 @@ OFFLINE_OSM_AS_BASE_LAYER = True
 
 # Update period for the Celery worker (in minutes)
 OFFLINE_OSM_UPDATE_INTERVAL = 60*24 # 1 day
+
+# Name of the postgres schema where the OSM data is stored
+OFFLINE_OSM_SCHEMA_NAME = "offline_osm"
+
+# Name of the folder where OSM data is downloaded
+OFFLINE_OSM_DATA_DIR = "/temp/offline_osm"
+
+# Name of the geoserver datastore name for PostGIS (will be created if it doesn't exist)
+OFFLINE_OSM_DATASTORE_NAME = "offline_osm"
 ```
 
 ## Management command

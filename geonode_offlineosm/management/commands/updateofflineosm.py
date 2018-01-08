@@ -21,13 +21,13 @@ class Command(BaseCommand):
     This command creates or updates local offline OSM data.
     """
 
-    download_dir = '/spcnode-media/urlretrieve/' # TODO : use temp instead
-    datastore_name = 'offline_osm' # TODO : use setting instead, see if can't use settings.OGC_SERVER['default']['DATASTORE']
-    schema_name = 'offline_osm' # TODO : use setting instead
-
     help = 'Updates the local offline OSM data. This will download around 1 GB so ensure to have good connection.'
 
     def __init__(self, *args, **kwargs):
+
+        self.schema_name = settings.OFFLINE_OSM_SCHEMA_NAME
+        self.download_dir = settings.OFFLINE_OSM_DATA_DIR
+        self.datastore_name = settings.OFFLINE_OSM_DATASTORE_NAME
 
         # We create the downloaddir
         if not os.path.isdir(self.download_dir):
@@ -191,24 +191,24 @@ class Command(BaseCommand):
             layer_exists = cursor.fetchall()[0][0]       
 
             if not layer_exists or not self.options['no_overwrite']:
-                print('Layer does not exists or no_overwrite unset, we import...')          
+                print('Layer does not exists or no_overwrite unset, we import...')    
 
-            if crop:
-                bbox = settings.OFFLINE_OSM_BBOX
-                wkt_string = 'POLYGON(({x1} {y1},{x2} {y1},{x2} {y2},{x1} {y2},{x1} {y1}))'.format(x1=bbox[0][0],y1=bbox[0][1],x2=bbox[1][0],y2=bbox[1][1])
-                bbox_geom = ogr.CreateGeometryFromWkt(wkt_string)
+                if crop:
+                    bbox = settings.OFFLINE_OSM_BBOX
+                    wkt_string = 'POLYGON(({x1} {y1},{x2} {y1},{x2} {y2},{x1} {y2},{x1} {y1}))'.format(x1=bbox[0][0],y1=bbox[0][1],x2=bbox[1][0],y2=bbox[1][1])
+                    bbox_geom = ogr.CreateGeometryFromWkt(wkt_string)
 
-                ogr_layer_ref = int(ogr_layer.GetSpatialRef().GetAuthorityCode("PROJCS") or 4326)
-                if ogr_layer_ref != 4326:
-                    source, target = osr.SpatialReference(), osr.SpatialReference()
-                    source.ImportFromEPSG(4326)
-                    target.ImportFromEPSG(ogr_layer_ref)
-                    transform = osr.CoordinateTransformation(source, target)
-                    bbox_geom.Transform(transform)
+                    ogr_layer_ref = int(ogr_layer.GetSpatialRef().GetAuthorityCode("PROJCS") or 4326)
+                    if ogr_layer_ref != 4326:
+                        source, target = osr.SpatialReference(), osr.SpatialReference()
+                        source.ImportFromEPSG(4326)
+                        target.ImportFromEPSG(ogr_layer_ref)
+                        transform = osr.CoordinateTransformation(source, target)
+                        bbox_geom.Transform(transform)
 
-                ogr_layer.SetSpatialFilter(bbox_geom)
+                    ogr_layer.SetSpatialFilter(bbox_geom)
 
-                ogr_postgres_layer = ogrds.CopyLayer(ogr_layer,qulfd_table_name,['OGR_INTERLEAVED_READING=YES','OVERWRITE=YES','COLUMN_TYPES=other_tags=hstore'])
+                    ogr_postgres_layer = ogrds.CopyLayer(ogr_layer,qulfd_table_name,['OGR_INTERLEAVED_READING=YES','OVERWRITE=YES','COLUMN_TYPES=other_tags=hstore'])
                 
             else:
                 print('Layer already exists, we skip...')   
