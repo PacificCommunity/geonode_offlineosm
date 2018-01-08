@@ -6,15 +6,20 @@ This is an app to create offline OSM layers for geonode.
 
 ## Quickstart
 
-1. Add "offline_osm" to your INSTALLED_APPS setting like this::
+1. Pip install the library
+
+`pip install git+https://github.com/PacificCommunity/geonode_offlineosm@master`
+
+2. Add "geonode_offlineosm" to your INSTALLED_APPS setting like this::
 ```python
     INSTALLED_APPS = [
         ...
-        'geonode-offlineosm',
+        'geonode_offlineosm',
         ...
     ]
 ```
-2. Run `python manage.py migrate` to pull the data from OpenStreetMaps.
+
+3. Run `python manage.py migrate` to pull the data from OpenStreetMaps.
 
 ## Settings
 
@@ -32,8 +37,8 @@ OFFLINE_OSM_AS_BASE_LAYER = True
 
 ## Management command
 
-To update the data, run the following management command. Be aware that will download a lot of data and require some heavy queries.
+To update the data, run the following management command. Be aware that will download a lot of data and require some heavy queries.  # TODO : describe options
 
 ```shell
-python manage.py updateofflineosm # TODO : describe options
+python manage.py updateofflineosm
 ```

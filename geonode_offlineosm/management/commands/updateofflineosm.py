@@ -36,13 +36,15 @@ class Command(BaseCommand):
         # This will keep track of timestamp of download
         self.import_timestamp = None
         self.options = None
+
+        self.cursor = connection.cursor()
         
         super(Command, self).__init__(*args, **kwargs)
 
     def add_arguments(self, parser):
         parser.add_argument('--source', default='overpass', choices=['overpass','pbf_and_shp'], help='Whether to get the data from an overpass query or from pbf/shp archives. Overpass should consume much less data as only required extent will be downloaded, but could fail for big extents..')
-        parser.add_argument('--no_overwrite', default="false", action='store_true', help='If this flag in enabled, downloads and importation steps will only be done if no data already exists. You can use this during app initialization to make sure data is present without forcing a redownload each time.')
-        parser.add_argument('--no_fail', default="false", action='store_true', help='If this flag in enabled, exceptions will be catched and exit code will always be 0')
+        parser.add_argument('--no_overwrite', default=False, action='store_true', help='If this flag in enabled, downloads and importation steps will only be done if no data already exists. You can use this during app initialization to make sure data is present without forcing a redownload each time.')
+        parser.add_argument('--no_fail', default=False, action='store_true', help='If this flag in enabled, exceptions will be catched and exit code will always be 0')
         
         # TODO : add parameters to load from local data
 
@@ -55,7 +57,7 @@ class Command(BaseCommand):
                 self._handle()
             except Exception as e:
                 print('WARNING : updateofflineosm command failed with --no_fail because of following exception')
-                traceback.print_exc()
+                repr(e)
                 exit(0)
         else:
             self._handle()
@@ -76,14 +78,18 @@ class Command(BaseCommand):
         self.import_timestamp = datetime.now() # TODO : set this only if data was really downloaded, as it is used for metadata
 
         print('[Step 2] Importing data in postgis')
-        if self.options['source'] == 'overpass':
-            self.import_overpass()
-        else:
-            self.import_shapefile()
-            self.import_osmxml()
+        # if self.options['source'] == 'overpass':
+        #     self.import_overpass()
+        # else:
+        #     self.import_shapefile()
+        #     self.import_osmxml()
+        self.update_views()
 
         print('[Step 3] Adding the layers to Geoserver')
-        self.add_to_geoserver()
+        self.add_to_geoserver([
+            'offline_osm_lines','offline_osm_multipolygons','offline_osm_points',
+            'roads','waterways',
+            'buildings','landuse','leisure','natural'])
 
         # print('[Step 4] Updating Geonode layers')
         # call_command('updatelayers', interactive=True)
@@ -153,12 +159,16 @@ class Command(BaseCommand):
     def _import(self, filename, crop=False):
         print('Importing {} to postgresql... This can take some time (over 10 minutes for large layers)'.format(filename))
 
-        connection.cursor().execute('CREATE SCHEMA IF NOT EXISTS '+self.schema_name)
-        connection.cursor().execute('CREATE EXTENSION IF NOT EXISTS postgis')
+        self.cursor.execute('CREATE SCHEMA IF NOT EXISTS '+self.schema_name)
+        self.cursor.execute('CREATE EXTENSION IF NOT EXISTS postgis')
+        self.cursor.execute('CREATE EXTENSION IF NOT EXISTS hstore')
         
         db = settings.DATABASES['default']
         connectionString = "PG:dbname='%s' host='%s' port='%s' user='%s' password='%s'" % (db['NAME'],db['HOST'],db['PORT'],db['USER'],db['PASSWORD'])
         ogrds = ogr.Open(connectionString)
+
+        wgs84 = osr.SpatialReference()
+        wgs84.ImportFromEPSG(4326)
 
         # table_name = filename.split('/')[-1][:-4]
         table_name = 'offline_osm'
@@ -175,7 +185,7 @@ class Command(BaseCommand):
 
             qulfd_table_name = self.schema_name+'.'+full_table_name
 
-            cursor = connection.cursor()
+            cursor = self.cursor
             sql = 'SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=%s AND table_name=%s)'
             cursor.execute(sql, [self.schema_name,full_table_name])
             layer_exists = cursor.fetchall()[0][0]       
@@ -198,12 +208,49 @@ class Command(BaseCommand):
 
                 ogr_layer.SetSpatialFilter(bbox_geom)
 
-                ogr_postgres_layer = ogrds.CopyLayer(ogr_layer,qulfd_table_name,['OGR_INTERLEAVED_READING=YES','OVERWRITE=YES'])
+                ogr_postgres_layer = ogrds.CopyLayer(ogr_layer,qulfd_table_name,['OGR_INTERLEAVED_READING=YES','OVERWRITE=YES','COLUMN_TYPES=other_tags=hstore'])
+                
             else:
                 print('Layer already exists, we skip...')   
 
 
-    def add_to_geoserver(self):
+
+    def update_views(self):
+        self._update_view('roads', 'offline_osm_lines', '"highway" IS NOT NULL')
+        self._update_view('waterways', 'offline_osm_lines', '"waterway" IS NOT NULL')
+        self._update_view('buildings', 'offline_osm_multipolygons', '"building" IS NOT NULL')
+        self._update_view('landuse', 'offline_osm_multipolygons', '"landuse" IS NOT NULL')
+        self._update_view('leisure', 'offline_osm_multipolygons', '"leisure" IS NOT NULL')
+        self._update_view('natural', 'offline_osm_multipolygons', '"natural" IS NOT NULL')
+
+    def _update_view(self,viewname,sourcename,conditions):
+        # TODO : THIS SHOULD USE VIEWS BUT DOESNT SEEM TO BE SUPPORTED BY GEONODE (bug when downloading files)
+
+        viewname = self.schema_name+'.'+viewname
+        sourcename = self.schema_name+'.'+sourcename
+
+        # Delte view if exists
+        roads_drop = 'DROP TABLE IF EXISTS {viewname}'
+        self.cursor.execute(roads_drop.format(viewname=viewname))
+
+        # Get the hstore keys list to select as columns
+        roads_hstore_keys = 'SELECT DISTINCT lower(key) FROM {sourcename}, skeys(other_tags) key WHERE {conditions} ORDER BY lower(key)'
+        self.cursor.execute(roads_hstore_keys.format(sourcename=sourcename, conditions=conditions))
+
+        # Create the view
+        select_other_tags = ','.join(["other_tags->'{t}' AS \"oth_{t}\"".format(t=r[0]) for r in self.cursor.fetchall()])
+        roads_sql = """CREATE TABLE {viewname} AS
+        SELECT *, {othertags} FROM {sourcename} WHERE {conditions}"""
+
+        # Create the view
+        self.cursor.execute(roads_sql.format(viewname=viewname, sourcename=sourcename, conditions=conditions, othertags=select_other_tags))
+        # Register the view as geometric
+        roads_reg = """SELECT Populate_Geometry_Columns('{viewname}'::regclass);"""        
+        self.cursor.execute(roads_reg.format(viewname=viewname))
+
+        
+
+    def add_to_geoserver(self, layernames):
         # Inspired (copied :) ) from https://groups.google.com/forum/#!msg/geonode-users/R-u57r8aECw/AuEpydZayfIJ # TODO : check license
         
         Log.objects.create( message="Started createbaselayers", success=True )
@@ -231,7 +278,6 @@ class Command(BaseCommand):
             raise Exception('datastore %s not found in geoserver'%self.datastore_name)
 
         # We get or create each layer then register it into geonode
-        layernames = ['offline_osm_lines','offline_osm_multipolygons','offline_osm_points'] #offline_osm_multilinestrings is empty it seems so we ignore it
         for layername in layernames:
             print('adding {} to geoserver'.format(layername))
             ft = cat.publish_featuretype(layername, store, 'EPSG:4326', srs='EPSG:4326')
@@ -243,20 +289,22 @@ class Command(BaseCommand):
 
             print('adding the style for {}'.format(layername))
             # We get or create the workspace
-            style_path = os.path.join(os.path.dirname(__file__),'..','..','..',layername+'.sld')
-            print(style_path)
-            cat.create_style(layername+'_style', open(style_path,'r').read(), overwrite=True, workspace=settings.DEFAULT_WORKSPACE, raw=True)
-            
-            style = cat.get_style(layername+'_style', ws)
-            if style is None:
-                raise Exception('style not found (%s)'%(layername+'_style'))
-
-            publishing = cat.get_layer(layername)
-            if publishing is None:
-                raise Exception('layer not found (%s)'%layerName)
+            style_path = os.path.join(os.path.dirname(__file__),'..','..','styles',layername+'.sld')
+            if not os.path.exists(style_path):
+                print('The file {} does not exist. No style will be applied for {}.'.format(style_path, layername))
+            else:
+                cat.create_style(layername+'_style', open(style_path,'r').read(), overwrite=True, workspace=settings.DEFAULT_WORKSPACE, raw=True)
                 
-            publishing.default_style = style
-            cat.save(publishing)
+                style = cat.get_style(layername+'_style', ws)
+                if style is None:
+                    raise Exception('style not found (%s)'%(layername+'_style'))
+
+                publishing = cat.get_layer(layername)
+                if publishing is None:
+                    raise Exception('layer not found (%s)'%layerName)
+                    
+                publishing.default_style = style
+                cat.save(publishing)
                 
             print('registering {} into geonode'.format(layername))        
             resource = cat.get_resource(layername, store, ws)
