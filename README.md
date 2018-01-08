@@ -60,3 +60,5 @@ python manage.py updateofflineosm
 ## Celery tasks
 
 Make sure your project configures autodiscover for Celery so that it will pickup `tasks.py`. Without this there will be no automatic updates.
+
+TODO : test this...

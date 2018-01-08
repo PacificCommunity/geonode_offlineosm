@@ -21,8 +21,12 @@
 from celery.schedules import crontab
 from celery.task import periodic_task
 from django.conf import settings
+from celery.utils.log import get_task_logger
 
+from . import default_settings
 
 @periodic_task(run_every=crontab(minute=settings.OFFLINE_OSM_UPDATE_INTERVAL))
 def update_offline_osm():
+    logger.info("Start task")
     call_command("updateofflineosm")
+    logger.info("Task finished")
