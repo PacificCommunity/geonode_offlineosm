@@ -135,6 +135,7 @@ class Command(BaseCommand):
             filename = url.split('/')[-1]
         filepath = os.path.join(self.download_dir,filename)
 
+        # TODO : ONLY DOWNLOAD IF OLDER THAN REFRESH RATE !!
         if not os.path.exists(filepath) or not self.options['no_overwrite']:
             print(' file does not exist or no_overwrite unset, we download it...')
             urllib.urlretrieve(url, filepath, urlretrieve_output)

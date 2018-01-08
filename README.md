@@ -59,6 +59,15 @@ python manage.py updateofflineosm
 
 ## Celery tasks
 
-Make sure your project configures autodiscover for Celery so that it will pickup `tasks.py`. Without this there will be no automatic updates.
+Add this so that Celery runs updateofflineosm on a regular basis
 
-TODO : test this...
+```
+CELERY_IMPORTS = CELERY_IMPORTS + ('geonode_offlineosm.tasks',) # is this needed if we put the task in CELERYBEAT_SCHEDULE ?
+CELERYBEAT_SCHEDULE = {
+    'update_offline_osm': {
+        'task': 'geonode_offlineosm.tasks.update_offline_osm',
+        'schedule': timedelta(seconds=30),
+        # 'args': (16, 16)
+    },
+}
+```
