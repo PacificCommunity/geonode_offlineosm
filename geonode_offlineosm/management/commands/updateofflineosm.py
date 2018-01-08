@@ -57,8 +57,8 @@ class Command(BaseCommand):
                 self._handle()
             except Exception as e:
                 print('WARNING : updateofflineosm command failed with --no_fail because of following exception')
-                repr(e)
-                exit(0)
+                print(e)
+                return
         else:
             self._handle()
 
@@ -78,11 +78,11 @@ class Command(BaseCommand):
         self.import_timestamp = datetime.now() # TODO : set this only if data was really downloaded, as it is used for metadata
 
         print('[Step 2] Importing data in postgis')
-        # if self.options['source'] == 'overpass':
-        #     self.import_overpass()
-        # else:
-        #     self.import_shapefile()
-        #     self.import_osmxml()
+        if self.options['source'] == 'overpass':
+            self.import_overpass()
+        else:
+            self.import_shapefile()
+            self.import_osmxml()
         self.update_views()
 
         print('[Step 3] Adding the layers to Geoserver')
@@ -135,27 +135,26 @@ class Command(BaseCommand):
             filename = url.split('/')[-1]
         filepath = os.path.join(self.download_dir,filename)
 
-        print('Downloading...')
         if not os.path.exists(filepath) or not self.options['no_overwrite']:
-            print('File does not exist or no_overwrite unset, we download it...')
+            print(' file does not exist or no_overwrite unset, we download it...')
             urllib.urlretrieve(url, filepath, urlretrieve_output)
         else:
             # TODO : THIS IS ONLY FOR DEV, FILE SHOULD BE REDOWNLOADED BECAUSE IT IS AN UPDATE FUNCTION
-            print('File already exists, we skip.')
+            print(' file already exists, we skip.')
 
         print('Unzipping...')
         if filename[-4:] == '.zip':
             if not os.path.isdir(os.path.join(self.download_dir,filename[:-4])) or not self.options['no_overwrite']:
-                print('File is zipped or no_overwrite unset, we unzip it...')
+                print(' file is zipped or no_overwrite unset, we unzip it...')
                 # TODO : REMOVE ZIPS TO SAVE HARD DRIVE SPACE
                 zip_ref = zipfile.ZipFile(filepath, 'r')
                 zip_ref.extractall(self.download_dir)
                 zip_ref.close()
             else:
                 # TODO : THIS IS ONLY FOR DEV, FILE SHOULD BE REUNZIPPED BECAUSE IT IS AN UPDATE FUNCTION
-                print('File already unzipped, we skip.')
+                print(' file already unzipped, we skip.')
         else:
-            print("Not a zip file, we skip.")
+            print(" not a zip file, we skip.")
     def _import(self, filename, crop=False):
         print('Importing {} to postgresql... This can take some time (over 10 minutes for large layers)'.format(filename))
 
@@ -175,7 +174,7 @@ class Command(BaseCommand):
         ogr_source = ogr.Open(os.path.join(self.download_dir,filename))
 
         for ogr_layer in ogr_source:
-            print('importing sublayer {}'.format(ogr_layer.GetName()))
+            print('Importing sublayer {}'.format(ogr_layer.GetName()))
 
             if len(ogr_source)==1:
                 full_table_name = table_name
@@ -191,7 +190,7 @@ class Command(BaseCommand):
             layer_exists = cursor.fetchall()[0][0]       
 
             if not layer_exists or not self.options['no_overwrite']:
-                print('Layer does not exists or no_overwrite unset, we import...')    
+                print(' layer does not exists or no_overwrite unset, we import...')    
 
                 if crop:
                     bbox = settings.OFFLINE_OSM_BBOX
@@ -211,7 +210,7 @@ class Command(BaseCommand):
                     ogr_postgres_layer = ogrds.CopyLayer(ogr_layer,qulfd_table_name,['OGR_INTERLEAVED_READING=YES','OVERWRITE=YES','COLUMN_TYPES=other_tags=hstore'])
                 
             else:
-                print('Layer already exists, we skip...')   
+                print(' layer already exists, we skip.')   
 
 
 
@@ -279,50 +278,58 @@ class Command(BaseCommand):
 
         # We get or create each layer then register it into geonode
         for layername in layernames:
-            print('adding {} to geoserver'.format(layername))
-            ft = cat.publish_featuretype(layername, store, 'EPSG:4326', srs='EPSG:4326')
-            if ft is None:
-                raise Exception('unable to publish layer %s'%layername)
-            ft.title = 'OpenStreetMap Offline - '+layername.split('_')[-1]
-            ft.abstract = 'This is an automated extract of the OpenStreetMap database. It is available offline. It is intended to be used as a background layer, but the data can also server analysis purposes.'
-            cat.save(ft)
+            print('Adding {} to geoserver...'.format(layername))
 
-            print('adding the style for {}'.format(layername))
-            # We get or create the workspace
-            style_path = os.path.join(os.path.dirname(__file__),'..','..','styles',layername+'.sld')
-            if not os.path.exists(style_path):
-                print('The file {} does not exist. No style will be applied for {}.'.format(style_path, layername))
-            else:
-                cat.create_style(layername+'_style', open(style_path,'r').read(), overwrite=True, workspace=settings.DEFAULT_WORKSPACE, raw=True)
-                
-                style = cat.get_style(layername+'_style', ws)
-                if style is None:
-                    raise Exception('style not found (%s)'%(layername+'_style'))
+            layer_exists = (not cat.get_layer(layername) is None)
+            
+            if not layer_exists or not self.options['no_overwrite']:
+                print('layer does not exists or no_overwrite unset, we add...')    
 
-                publishing = cat.get_layer(layername)
-                if publishing is None:
-                    raise Exception('layer not found (%s)'%layerName)
+                ft = cat.publish_featuretype(layername, store, 'EPSG:4326', srs='EPSG:4326')
+                if ft is None:
+                    raise Exception('unable to publish layer %s'%layername)
+                ft.title = 'OpenStreetMap Offline - '+layername.split('_')[-1]
+                ft.abstract = 'This is an automated extract of the OpenStreetMap database. It is available offline. It is intended to be used as a background layer, but the data can also server analysis purposes.'
+                cat.save(ft)
+
+                print(' adding the style for {}...'.format(layername))
+                # We get or create the workspace
+                style_path = os.path.join(os.path.dirname(__file__),'..','..','styles',layername+'.sld')
+                if not os.path.exists(style_path):
+                    print(' The file {} does not exist. No style will be applied for {}.'.format(style_path, layername))
+                else:
+                    cat.create_style(layername+'_style', open(style_path,'r').read(), overwrite=True, workspace=settings.DEFAULT_WORKSPACE, raw=True)
                     
-                publishing.default_style = style
-                cat.save(publishing)
-                
-            print('registering {} into geonode'.format(layername))        
-            resource = cat.get_resource(layername, store, ws)
-            if resource is None:
-                raise Exception('resource not found (%s)'%layername)
-        
-            layer, created = Layer.objects.get_or_create(name=layername)
-            layer.workspace = ws.name
-            layer.store = store.name
-            layer.storeType = store.resource_type
-            layer.typename = "%s:%s" % (ws.name.encode('utf-8'), resource.name.encode('utf-8'))
-            layer.title = resource.title
-            layer.abstract = resource.abstract
-            layer.temporal_extent_start = self.import_timestamp
-            layer.temporal_extent_end = self.import_timestamp
-            layer.save()        
-            if created:
-                layer.set_default_permissions()
+                    style = cat.get_style(layername+'_style', ws)
+                    if style is None:
+                        raise Exception('style not found (%s)'%(layername+'_style'))
+
+                    publishing = cat.get_layer(layername)
+                    if publishing is None:
+                        raise Exception('layer not found (%s)'%layerName)
+                        
+                    publishing.default_style = style
+                    cat.save(publishing)
+                    
+                print(' registering {} into geonode...'.format(layername))        
+                resource = cat.get_resource(layername, store, ws)
+                if resource is None:
+                    raise Exception('resource not found (%s)'%layername)
+            
+                layer, created = Layer.objects.get_or_create(name=layername)
+                layer.workspace = ws.name
+                layer.store = store.name
+                layer.storeType = store.resource_type
+                layer.typename = "%s:%s" % (ws.name.encode('utf-8'), resource.name.encode('utf-8'))
+                layer.title = resource.title
+                layer.abstract = resource.abstract
+                layer.temporal_extent_start = self.import_timestamp
+                layer.temporal_extent_end = self.import_timestamp
+                layer.save()        
+                if created:
+                    layer.set_default_permissions()
+            else:
+                print(' layer already exists, we skip.')
 
         # We get or create the laygroup
         print('adding layergroup to geoserver')
