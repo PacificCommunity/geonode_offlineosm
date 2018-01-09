@@ -5,7 +5,7 @@ from .app_settings import settings
 
 
 def updateofflineosm_callback(sender, **kwargs):
-    call_command("updateofflineosm", "--no_overwrite", "--no_fail")
+    call_command("updateofflineosm", "--no_overwrite")
 
 class MyAppConfig(AppConfig):
     name = 'geonode_offlineosm'
