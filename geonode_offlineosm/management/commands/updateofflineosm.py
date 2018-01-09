@@ -15,6 +15,7 @@ from geoserver.catalog import Catalog
 from geonode.layers.models import Layer
 from datetime import datetime
 import traceback
+import time
 
 class Command(BaseCommand):
     """
@@ -100,13 +101,13 @@ class Command(BaseCommand):
     
     def download_shapefile(self):
         # self._download("http://data.openstreetmapdata.com/simplified-land-polygons-complete-3857.zip")
-        self._download("http://data.openstreetmapdata.com/land-polygons-split-3857.zip")
+        return self._download("http://data.openstreetmapdata.com/land-polygons-split-3857.zip")
     def import_shapefile(self):
         # self._import('simplified-land-polygons-complete-3857/simplified_land_polygons.shp')
         self._import('land-polygons-split-3857/land_polygons.shp', crop=True)
 
     def download_osmxml(self):
-        self._download("http://download.geofabrik.de/australia-oceania-latest.osm.pbf")
+        return self._download("http://download.geofabrik.de/australia-oceania-latest.osm.pbf")
     def import_osmxml(self):
         self._import('australia-oceania-latest.osm.pbf', crop=True)
 
@@ -118,7 +119,7 @@ class Command(BaseCommand):
         overpass_q = '( node({y1},{x1},{y2},{x2}); <; >; ); out meta;' # TODO : test this (does recusre up <; then down >; work ?)
         overpass_q = overpass_q.format(x1=bbox[0][0],y1=bbox[0][1],x2=bbox[1][0],y2=bbox[1][1])
         url = overpass_endpoint+'?'+urllib.urlencode({'data':overpass_q})
-        self._download(url, 'overpass_results.osm')
+        return self._download(url, 'overpass_results.osm')
     def import_overpass(self):
         self._import('overpass_results.osm', crop=True)
 
@@ -126,22 +127,38 @@ class Command(BaseCommand):
         print('Downloading '+url)
         
         def urlretrieve_output(a,b,c):
-            if c==-1:
-                sys.stdout.write("\r{:0.2f} MB (total size unknown)".format(a*b/1000000.0))
+            global lsttim
+            if "lsttim" in globals() and int((datetime.now()-lsttim).total_seconds()) < 10:
+                # We skip if less than 10 sec to avoid filling console
+                return
             else:
-                sys.stdout.write("\r{:0.2f} MB out of {:0.2f} MB ({:0f}%)".format(a*b/1000000.0,c/1000000.0, (a*b)/float(c)*100.0))
+                lsttim = datetime.now()
+
+            if c==-1:
+                sys.stdout.write("\r{:0.2f} MB (total size unknown)...".format(a*b/1000000.0))
+            else:
+                sys.stdout.write("\r{:0.2f} MB out of {:0.2f} MB ({:0f}%)...".format(a*b/1000000.0,c/1000000.0, (a*b)/float(c)*100.0))
 
         if not filename:
             filename = url.split('/')[-1]
         filepath = os.path.join(self.download_dir,filename)
 
-        # TODO : ONLY DOWNLOAD IF OLDER THAN REFRESH RATE !!
-        if not os.path.exists(filepath) or not self.options['no_overwrite']:
-            print(' file does not exist or no_overwrite unset, we download it...')
-            urllib.urlretrieve(url, filepath, urlretrieve_output)
+        # Let's see if we must redownload the file    
+        if not os.path.exists(filepath):
+            print(' file does not exist, we download it...')
+            must_download = True
+        elif time.time()-os.path.getmtime(filepath)>settings.OFFLINE_OSM_UPDATE_INTERVAL*60:
+            if self.options['no_overwrite']:
+                print(' file is too old, but no_overwrite flag is set. we skip.')
+                must_download = False
+            else:
+                print(' file is too old, we download it...')
+                must_download = True
         else:
-            # TODO : THIS IS ONLY FOR DEV, FILE SHOULD BE REDOWNLOADED BECAUSE IT IS AN UPDATE FUNCTION
-            print(' file already exists, we skip.')
+            print(' file already exists, we skip.') 
+            must_download = False
+        if must_download:
+            urllib.urlretrieve(url, filepath, urlretrieve_output)
 
         print('Unzipping...')
         if filename[-4:] == '.zip':
@@ -156,6 +173,8 @@ class Command(BaseCommand):
                 print(' file already unzipped, we skip.')
         else:
             print(" not a zip file, we skip.")
+
+        return os.path.getmtime(filepath)
     def _import(self, filename, crop=False):
         print('Importing {} to postgresql... This can take some time (over 10 minutes for large layers)'.format(filename))
 
@@ -239,8 +258,10 @@ class Command(BaseCommand):
 
         # Create the view
         select_other_tags = ','.join(["other_tags->'{t}' AS \"oth_{t}\"".format(t=r[0]) for r in self.cursor.fetchall()])
+        if select_other_tags:
+            select_other_tags = ', '+select_other_tags
         roads_sql = """CREATE TABLE {viewname} AS
-        SELECT *, {othertags} FROM {sourcename} WHERE {conditions}"""
+        SELECT *{othertags} FROM {sourcename} WHERE {conditions}"""
 
         # Create the view
         self.cursor.execute(roads_sql.format(viewname=viewname, sourcename=sourcename, conditions=conditions, othertags=select_other_tags))
