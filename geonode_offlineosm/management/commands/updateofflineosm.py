@@ -7,7 +7,7 @@ import sys
 import ogr, osr
 import dj_database_url
 from django.db import connection
-from django.conf import settings
+from ...app_settings import settings
 from ...models import Log
 from django.core.management import call_command
 import requests

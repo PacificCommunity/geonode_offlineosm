@@ -1,30 +1,41 @@
+"""
+This imports defaults settings and then sets the defaults values in case they were not provided.
+"""
+
 from django.conf import settings
 
 # This sets defaults settings
 
-if not hasattr(settings, 'OFFLINE_OSM_AS_BASE_LAYER'):
+if not hasattr(settings,'OFFLINE_OSM_AS_BASE_LAYER'):
     settings.OFFLINE_OSM_AS_BASE_LAYER = True
 
-if not hasattr(settings, 'OFFLINE_OSM_BBX'):
+if not hasattr(settings,'OFFLINE_OSM_BBX'):
     settings.OFFLINE_OSM_BBOX = [
         [176.8, -18.6], # BOTTOMLEFT
         [179.3, -17.1], # TOPRIGHT
     ];
 
-if not hasattr(settings, 'OFFLINE_OSM_UPDATE_INTERVAL'):
+if not hasattr(settings,'OFFLINE_OSM_UPDATE_INTERVAL'):
     settings.OFFLINE_OSM_UPDATE_INTERVAL = 60*24 # 1 day
 
-if not hasattr(settings, 'OFFLINE_OSM_SCHEMA_NAME'):
+if not hasattr(settings,'OFFLINE_OSM_SCHEMA_NAME'):
     settings.OFFLINE_OSM_SCHEMA_NAME = "offline_osm"
 
-if not hasattr(settings, 'OFFLINE_OSM_DATA_DIR'):
+if not hasattr(settings,'OFFLINE_OSM_DATA_DIR'):
     settings.OFFLINE_OSM_DATA_DIR = "/temp/offline_osm"
 
-if not hasattr(settings, 'OFFLINE_OSM_DATASTORE_NAME'):
-    # TODO : see if can't use settings.OGC_SERVER['default']['DATASTORE']
+if not hasattr(settings,'OFFLINE_OSM_DATASTORE_NAME'):
+    # TODO : see if can't use OGC_SERVER['default']['DATASTORE']
     settings.OFFLINE_OSM_DATASTORE_NAME = "offline_osm"
 
+if not hasattr(settings,'OFFLINE_OSM_UPDATE_AFTER_MIGRATE'):
+    settings.OFFLINE_OSM_UPDATE_AFTER_MIGRATE = True
+
 if settings.OFFLINE_OSM_AS_BASE_LAYER:
+
+    if not hasattr(settings,'MAP_BASELAYERS'):
+        settings.MAP_BASELAYERS = []
+
     settings.MAP_BASELAYERS.append(
         {
             "source": {"ptype": "gxp_olsource"},

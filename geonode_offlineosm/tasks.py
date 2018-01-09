@@ -19,16 +19,23 @@
 #########################################################################
 
 from celery.schedules import crontab
-from celery.task import periodic_task
-from django.conf import settings
-from celery.utils.log import get_task_logger
-from django.core.management import call_command
+from celery.task import task, periodic_task
 
-from . import default_settings
+from celery.utils.log import get_task_logger
+from celery.signals import celeryd_init
+from django.core.management import call_command
+import time
+
+from datetime import timedelta
+
+from .app_settings import settings
+
+from geonode.celery_app import app
 
 logger = get_task_logger(__name__)
+        
 
-@periodic_task(run_every=crontab(minute=settings.OFFLINE_OSM_UPDATE_INTERVAL))
+@periodic_task(run_every=timedelta(minutes=settings.OFFLINE_OSM_UPDATE_INTERVAL))
 def update_offline_osm():
     logger.info("Start task")
     call_command("updateofflineosm")

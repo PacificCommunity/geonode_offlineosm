@@ -33,8 +33,10 @@ OFFLINE_OSM_BBOX = [
 ]
 
 # Whether Offline OSM should be made available as base layers
-# (when true, data will be downloaded after migrations (once))
 OFFLINE_OSM_AS_BASE_LAYER = True
+
+# Whether data will be downloaded after migrations (once, usefull ifyou want to reliably count on the presence of the data)
+OFFLINE_OSM_UPDATE_AFTER_MIGRATE = True
 
 # Update period for the Celery worker (in minutes)
 OFFLINE_OSM_UPDATE_INTERVAL = 60*24 # 1 day
@@ -62,12 +64,6 @@ python manage.py updateofflineosm
 Add this so that Celery runs updateofflineosm on a regular basis
 
 ```
-CELERY_IMPORTS = CELERY_IMPORTS + ('geonode_offlineosm.tasks',) # is this needed if we put the task in CELERYBEAT_SCHEDULE ?
-CELERYBEAT_SCHEDULE = {
-    'update_offline_osm': {
-        'task': 'geonode_offlineosm.tasks.update_offline_osm',
-        'schedule': timedelta(seconds=30),
-        # 'args': (16, 16)
-    },
-}
+CELERY_IMPORTS = CELERY_IMPORTS + ('geonode_offlineosm.tasks',)
+CELERY_ALWAYS_EAGER = False # is this needed ?
 ```
