@@ -30,10 +30,6 @@ class Command(BaseCommand):
         self.download_dir = settings.OFFLINE_OSM_DATA_DIR
         self.datastore_name = settings.OFFLINE_OSM_DATASTORE_NAME
 
-        # We create the downloaddir
-        if not os.path.isdir(self.download_dir):
-            os.mkdir(self.download_dir)
-
         # This will keep track of timestamp of download
         self.import_timestamp = None
         self.options = None
@@ -142,6 +138,10 @@ class Command(BaseCommand):
         if not filename:
             filename = url.split('/')[-1]
         filepath = os.path.join(self.download_dir,filename)
+
+        # We create the downloaddir
+        if not os.path.isdir(self.download_dir):
+            os.mkdirs(self.download_dir)
 
         # Let's see if we must redownload the file    
         if not os.path.exists(filepath):
