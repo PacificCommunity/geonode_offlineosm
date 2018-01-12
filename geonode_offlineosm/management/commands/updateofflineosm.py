@@ -8,7 +8,6 @@ import ogr, osr
 import dj_database_url
 from django.db import connection
 from ...app_settings import settings
-from ...models import Log
 from django.core.management import call_command
 import requests
 from geoserver.catalog import Catalog
@@ -62,8 +61,6 @@ class Command(BaseCommand):
     def _handle(self):
 
         print('[UpdateOfflineOSM] Command called')
-
-        Log.objects.create( message="Started updateofflineosm from source {}".format(self.options['source']), success=True )
         
         print('[Step 1] Downloading data')
         if self.options['source'] == 'overpass':
@@ -92,8 +89,6 @@ class Command(BaseCommand):
         # call_command('updatelayers', interactive=True)
 
         print('[Done !]')
-
-        Log.objects.create( message="Finished updateofflineosm", success=True )
     
     def download_shapefile(self):
         # self._download("http://data.openstreetmapdata.com/simplified-land-polygons-complete-3857.zip")
@@ -273,8 +268,6 @@ class Command(BaseCommand):
 
     def add_to_geoserver(self, layernames):
         # Inspired (copied :) ) from https://groups.google.com/forum/#!msg/geonode-users/R-u57r8aECw/AuEpydZayfIJ # TODO : check license
-        
-        Log.objects.create( message="Started createbaselayers", success=True )
 
         # We connect to the catalog
         gsUrl = settings.OGC_SERVER['default']['LOCATION'] + "rest"
