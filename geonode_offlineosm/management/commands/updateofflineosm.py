@@ -141,7 +141,7 @@ class Command(BaseCommand):
 
         # We create the downloaddir
         if not os.path.isdir(self.download_dir):
-            os.mkdirs(self.download_dir)
+            os.makedirs(self.download_dir)
 
         # Let's see if we must redownload the file    
         if not os.path.exists(filepath):
