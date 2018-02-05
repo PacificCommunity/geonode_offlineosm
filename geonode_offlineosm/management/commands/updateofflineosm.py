@@ -244,25 +244,25 @@ class Command(BaseCommand):
         sourcename = self.schema_name+'.'+sourcename
 
         # Delte view if exists
-        roads_drop = 'DROP TABLE IF EXISTS {viewname}'
-        self.cursor.execute(roads_drop.format(viewname=viewname))
+        drop_sql = 'DROP TABLE IF EXISTS {viewname}'
+        self.cursor.execute(drop_sql.format(viewname=viewname))
 
         # Get the hstore keys list to select as columns
-        roads_hstore_keys = 'SELECT DISTINCT lower(key) FROM {sourcename}, skeys(other_tags) key WHERE {conditions} ORDER BY lower(key)'
-        self.cursor.execute(roads_hstore_keys.format(sourcename=sourcename, conditions=conditions))
+        select_sql = 'SELECT DISTINCT lower(key) FROM {sourcename}, skeys(other_tags) key WHERE {conditions} ORDER BY lower(key)'
+        self.cursor.execute(select_sql.format(sourcename=sourcename, conditions=conditions))
 
         # Create the view
         select_other_tags = ','.join(["other_tags->'{t}' AS \"oth_{t}\"".format(t=r[0]) for r in self.cursor.fetchall()])
         if select_other_tags:
             select_other_tags = ', '+select_other_tags
-        roads_sql = """CREATE TABLE {viewname} AS
+        table_sql = """CREATE TABLE {viewname} AS
         SELECT *{othertags} FROM {sourcename} WHERE {conditions}"""
 
         # Create the view
-        self.cursor.execute(roads_sql.format(viewname=viewname, sourcename=sourcename, conditions=conditions, othertags=select_other_tags))
+        self.cursor.execute(table_sql.format(viewname=viewname, sourcename=sourcename, conditions=conditions, othertags=select_other_tags))
         # Register the view as geometric
-        roads_reg = """SELECT Populate_Geometry_Columns('{viewname}'::regclass);"""        
-        self.cursor.execute(roads_reg.format(viewname=viewname))
+        register_sql = """SELECT Populate_Geometry_Columns('{viewname}'::regclass);"""        
+        self.cursor.execute(register_sql.format(viewname=viewname))
 
         
 
@@ -298,7 +298,7 @@ class Command(BaseCommand):
             layer_exists = (not cat.get_layer(layername) is None)
             
             if not layer_exists or not self.options['no_overwrite']:
-                print('layer does not exists or no_overwrite unset, we add...')    
+                print(' layer does not exists or no_overwrite unset, we add...')    
 
                 ft = cat.publish_featuretype(layername, store, 'EPSG:4326', srs='EPSG:4326')
                 if ft is None:
@@ -353,16 +353,22 @@ class Command(BaseCommand):
                 print(' layer already exists, we skip.')
 
         # We get or create the laygroup
-        print('adding layergroup to geoserver')
+        print('Adding layergroup to geoserver...')
         layername = 'offline_osm'
-        layergroup = cat.get_layergroup(layername, workspace=settings.DEFAULT_WORKSPACE)
-        if layergroup is None:
-            layergroup = cat.create_layergroup(layername, layers=layernames, workspace=settings.DEFAULT_WORKSPACE)
+        layergroup_exists = (not cat.get_layergroup(layername) is None)
+        if not layer_exists or not self.options['no_overwrite']:
+            print(' layer does not exists or no_overwrite unset, we add...')    
+
+            layergroup = cat.get_layergroup(layername, workspace=settings.DEFAULT_WORKSPACE)
             if layergroup is None:
-                raise Exception('unable to publish layer %s'%layername)
-        layergroup.title = 'OpenStreetMap Offline'
-        layergroup.abstract = 'This is an automated extract of the OpenStreetMap database. It is available offline. It is intended to be used as a background layer, but the data can also server analysis purposes.'
-        cat.save(layergroup)
+                layergroup = cat.create_layergroup(layername, layers=layernames, workspace=settings.DEFAULT_WORKSPACE)
+                if layergroup is None:
+                    raise Exception('unable to publish layer %s'%layername)
+            layergroup.title = 'OpenStreetMap Offline'
+            layergroup.abstract = 'This is an automated extract of the OpenStreetMap database. It is available offline. It is intended to be used as a background layer, but the data can also server analysis purposes.'
+            cat.save(layergroup)
+        else:
+            print(' layergroup already exists, we skip.')
 
 
         # TODO : can we add layergroups to Geonode ?
