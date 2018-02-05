@@ -340,7 +340,13 @@ class Command(BaseCommand):
                 layer.abstract = resource.abstract
                 layer.temporal_extent_start = self.import_timestamp
                 layer.temporal_extent_end = self.import_timestamp
-                layer.save()        
+                try:
+                    layer.save()  
+                except TypeError as e:
+                    # We ignore a specific error in Geonode resourcebase_post_save when settings.SITEURL has no host (relative URL) 
+                    print('TODO : report Geonode exception in resourcebase_post_save when settings.SITEURL has no host (relative URL) : '+str(e))
+                    pass
+
                 if created:
                     layer.set_default_permissions()
             else:
