@@ -541,35 +541,6 @@
           </se:LineSymbolizer>
         </se:Rule>
         <se:Rule>
-          <se:Name>"highway" = 'bridleway'</se:Name>
-          <se:Description>
-            <se:Title>"highway" = 'bridleway'</se:Title>
-          </se:Description>
-          <ogc:Filter xmlns:ogc="http://www.opengis.net/ogc">
-            <ogc:And>
-              <ogc:Not>
-                <ogc:PropertyIsNull>
-                  <ogc:PropertyName>highway</ogc:PropertyName>
-                </ogc:PropertyIsNull>
-              </ogc:Not>
-              <ogc:PropertyIsEqualTo>
-                <ogc:PropertyName>highway</ogc:PropertyName>
-                <ogc:Literal>bridleway</ogc:Literal>
-              </ogc:PropertyIsEqualTo>
-            </ogc:And>
-          </ogc:Filter>
-          <se:MinScaleDenominator>5000</se:MinScaleDenominator>
-          <se:MaxScaleDenominator>25000</se:MaxScaleDenominator>
-          <se:LineSymbolizer>
-            <se:Stroke>
-              <se:SvgParameter name="stroke">#a8d511</se:SvgParameter>
-              <se:SvgParameter name="stroke-width">1</se:SvgParameter>
-              <se:SvgParameter name="stroke-linejoin">bevel</se:SvgParameter>
-              <se:SvgParameter name="stroke-linecap">square</se:SvgParameter>
-            </se:Stroke>
-          </se:LineSymbolizer>
-        </se:Rule>
-        <se:Rule>
           <se:Name>"highway" = 'footway'</se:Name>
           <se:Description>
             <se:Title>"highway" = 'footway'</se:Title>
@@ -842,35 +813,6 @@
             <se:Stroke>
               <se:SvgParameter name="stroke">#ffffff</se:SvgParameter>
               <se:SvgParameter name="stroke-width">4</se:SvgParameter>
-              <se:SvgParameter name="stroke-linejoin">bevel</se:SvgParameter>
-              <se:SvgParameter name="stroke-linecap">square</se:SvgParameter>
-            </se:Stroke>
-          </se:LineSymbolizer>
-        </se:Rule>
-        <se:Rule>
-          <se:Name>"highway" = 'bridleway'</se:Name>
-          <se:Description>
-            <se:Title>"highway" = 'bridleway'</se:Title>
-          </se:Description>
-          <ogc:Filter xmlns:ogc="http://www.opengis.net/ogc">
-            <ogc:And>
-              <ogc:Not>
-                <ogc:PropertyIsNull>
-                  <ogc:PropertyName>highway</ogc:PropertyName>
-                </ogc:PropertyIsNull>
-              </ogc:Not>
-              <ogc:PropertyIsEqualTo>
-                <ogc:PropertyName>highway</ogc:PropertyName>
-                <ogc:Literal>bridleway</ogc:Literal>
-              </ogc:PropertyIsEqualTo>
-            </ogc:And>
-          </ogc:Filter>
-          <se:MinScaleDenominator>1</se:MinScaleDenominator>
-          <se:MaxScaleDenominator>5000</se:MaxScaleDenominator>
-          <se:LineSymbolizer>
-            <se:Stroke>
-              <se:SvgParameter name="stroke">#a8d511</se:SvgParameter>
-              <se:SvgParameter name="stroke-width">1</se:SvgParameter>
               <se:SvgParameter name="stroke-linejoin">bevel</se:SvgParameter>
               <se:SvgParameter name="stroke-linecap">square</se:SvgParameter>
             </se:Stroke>
