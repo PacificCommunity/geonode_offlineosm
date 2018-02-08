@@ -8,10 +8,17 @@ def updateofflineosm_callback(sender, **kwargs):
     print("Calling post-migrate management command : updateofflineosm --no_overwrite --no_fail")
     call_command("updateofflineosm", "--no_overwrite", "--no_fail")
 
+print('DEBUG - APPS.PY')
+
 class MyAppConfig(AppConfig):
     name = 'geonode_offlineosm'
     verbose_name = "Offline OSM"
-    def ready(self):        
+
+    print('DEBUG - MyAppConfig')
+
+    def ready(self):
+        print('DEBUG - ready')
         # Import our custom settings
         if settings.OFFLINE_OSM_UPDATE_AFTER_MIGRATE:
+            print('DEBUG - installing post_migrate')
             post_migrate.connect(updateofflineosm_callback, sender=self)
