@@ -21,4 +21,5 @@ class MyAppConfig(AppConfig):
         # Import our custom settings
         if settings.OFFLINE_OSM_UPDATE_AFTER_MIGRATE:
             print('DEBUG - installing post_migrate')
-            post_migrate.connect(updateofflineosm_callback, sender=self)
+            post_migrate.connect(updateofflineosm_callback, sender=self, weak=False)
+            print('DEBUG - post_migrate installed')
