@@ -22,7 +22,7 @@ if not hasattr(settings,'OFFLINE_OSM_SCHEMA_NAME'):
     settings.OFFLINE_OSM_SCHEMA_NAME = "offline_osm"
 
 if not hasattr(settings,'OFFLINE_OSM_DATA_DIR'):
-    settings.OFFLINE_OSM_DATA_DIR = "/temp/offline_osm"
+    settings.OFFLINE_OSM_DATA_DIR = "/tmp/offline_osm"
 
 if not hasattr(settings,'OFFLINE_OSM_DATASTORE_NAME'):
     # TODO : see if can't use OGC_SERVER['default']['DATASTORE']
