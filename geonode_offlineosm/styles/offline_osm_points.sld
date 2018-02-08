@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<StyledLayerDescriptor xmlns="http://www.opengis.net/sld" xmlns:se="http://www.opengis.net/se" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1.0" xsi:schemaLocation="http://www.opengis.net/sld http://schemas.opengis.net/sld/1.1.0/StyledLayerDescriptor.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ogc="http://www.opengis.net/ogc">
+<StyledLayerDescriptor xmlns="http://www.opengis.net/sld" xmlns:se="http://www.opengis.net/se" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/sld http://schemas.opengis.net/sld/1.1.0/StyledLayerDescriptor.xsd" version="1.1.0" xmlns:ogc="http://www.opengis.net/ogc" xmlns:xlink="http://www.w3.org/1999/xlink">
   <NamedLayer>
     <se:Name>Offline Osm Points</se:Name>
     <UserStyle>
@@ -42,7 +42,7 @@
               <ogc:PropertyName>name</ogc:PropertyName>
             </se:Label>
             <se:Font>
-              <se:SvgParameter name="font-family">Minion Pro</se:SvgParameter>
+              <se:SvgParameter name="font-family">Segoe UI Light</se:SvgParameter>
               <se:SvgParameter name="font-size">28</se:SvgParameter>
             </se:Font>
             <se:LabelPlacement>
@@ -78,8 +78,8 @@
               <ogc:PropertyName>name</ogc:PropertyName>
             </se:Label>
             <se:Font>
-              <se:SvgParameter name="font-family">Minion Pro</se:SvgParameter>
-              <se:SvgParameter name="font-size">23</se:SvgParameter>
+              <se:SvgParameter name="font-family">Segoe UI Light</se:SvgParameter>
+              <se:SvgParameter name="font-size">5000</se:SvgParameter>
               <se:SvgParameter name="font-style">italic</se:SvgParameter>
             </se:Font>
             <se:LabelPlacement>
@@ -98,6 +98,7 @@
             </se:Halo>
             <se:Fill>
               <se:SvgParameter name="fill">#000000</se:SvgParameter>
+              <se:SvgParameter name="fill-opacity">0.5</se:SvgParameter>
             </se:Fill>
           </se:TextSymbolizer>
         </se:Rule>
@@ -115,8 +116,8 @@
               <ogc:PropertyName>name</ogc:PropertyName>
             </se:Label>
             <se:Font>
-              <se:SvgParameter name="font-family">Minion Pro</se:SvgParameter>
-              <se:SvgParameter name="font-size">23</se:SvgParameter>
+              <se:SvgParameter name="font-family">Segoe UI Light</se:SvgParameter>
+              <se:SvgParameter name="font-size">20</se:SvgParameter>
             </se:Font>
             <se:LabelPlacement>
               <se:PointPlacement>
@@ -151,8 +152,8 @@
               <ogc:PropertyName>name</ogc:PropertyName>
             </se:Label>
             <se:Font>
-              <se:SvgParameter name="font-family">Minion Pro</se:SvgParameter>
-              <se:SvgParameter name="font-size">15</se:SvgParameter>
+              <se:SvgParameter name="font-family">Segoe UI Light</se:SvgParameter>
+              <se:SvgParameter name="font-size">18</se:SvgParameter>
             </se:Font>
             <se:LabelPlacement>
               <se:PointPlacement>
@@ -187,8 +188,8 @@
               <ogc:PropertyName>name</ogc:PropertyName>
             </se:Label>
             <se:Font>
-              <se:SvgParameter name="font-family">Minion Pro</se:SvgParameter>
-              <se:SvgParameter name="font-size">20</se:SvgParameter>
+              <se:SvgParameter name="font-family">Segoe UI Light</se:SvgParameter>
+              <se:SvgParameter name="font-size">100</se:SvgParameter>
               <se:SvgParameter name="font-style">italic</se:SvgParameter>
             </se:Font>
             <se:LabelPlacement>
@@ -203,10 +204,12 @@
               <se:Radius>2</se:Radius>
               <se:Fill>
                 <se:SvgParameter name="fill">#ffffff</se:SvgParameter>
+                <se:SvgParameter name="fill-opacity">0.5</se:SvgParameter>
               </se:Fill>
             </se:Halo>
             <se:Fill>
               <se:SvgParameter name="fill">#000000</se:SvgParameter>
+              <se:SvgParameter name="fill-opacity">0.5</se:SvgParameter>
             </se:Fill>
           </se:TextSymbolizer>
         </se:Rule>
