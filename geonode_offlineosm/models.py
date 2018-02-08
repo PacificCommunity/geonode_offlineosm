@@ -1,0 +1,1 @@
+# Nothing here, we still need to keep the file as we use the post_migrate signal to run initial data download.
