@@ -18,25 +18,23 @@
 #
 #########################################################################
 
-from celery.schedules import crontab
-from celery.task import task, periodic_task
-
-from celery.utils.log import get_task_logger
-from celery.signals import celeryd_init
+from celery.task import periodic_task
 from django.core.management import call_command
-import time
-
+import time, random
+from cStringIO import StringIO
 from datetime import timedelta
-
 from .app_settings import settings
 
-from geonode.celery_app import app
 
-logger = get_task_logger(__name__)
-        
+@periodic_task(run_every=timedelta(seconds=30))
+def test_task():
+    if random.choice([True,False]):
+        print('Task succeeded !')
+    else:
+        raise Exception("simulated failure")
 
 @periodic_task(run_every=timedelta(minutes=settings.OFFLINE_OSM_UPDATE_INTERVAL))
 def update_offline_osm():
-    logger.info("Start task")
-    call_command("updateofflineosm")
-    logger.info("Task finished")
+    my_stdout = StringIO()
+    call_command("updateofflineosm", stdout=my_stdout)
+    return my_stdout.read()

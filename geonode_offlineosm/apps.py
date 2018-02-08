@@ -5,6 +5,7 @@ from .app_settings import settings
 
 
 def updateofflineosm_callback(sender, **kwargs):
+    print("Calling post-migrate management command : updateofflineosm --no_overwrite --no_fail")
     call_command("updateofflineosm", "--no_overwrite", "--no_fail")
 
 class MyAppConfig(AppConfig):
@@ -12,6 +13,5 @@ class MyAppConfig(AppConfig):
     verbose_name = "Offline OSM"
     def ready(self):        
         # Import our custom settings
-
         if settings.OFFLINE_OSM_UPDATE_AFTER_MIGRATE:
             post_migrate.connect(updateofflineosm_callback, sender=self)

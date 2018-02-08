@@ -16,7 +16,7 @@ if not hasattr(settings,'OFFLINE_OSM_BBX'):
     ];
 
 if not hasattr(settings,'OFFLINE_OSM_UPDATE_INTERVAL'):
-    settings.OFFLINE_OSM_UPDATE_INTERVAL = 60*24 # 1 day
+    settings.OFFLINE_OSM_UPDATE_INTERVAL = 60*24*7 # once a week
 
 if not hasattr(settings,'OFFLINE_OSM_SCHEMA_NAME'):
     settings.OFFLINE_OSM_SCHEMA_NAME = "offline_osm"
