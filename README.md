@@ -38,6 +38,9 @@ OFFLINE_OSM_AS_BASE_LAYER = True
 # Whether data will be downloaded after migrations (once, usefull ifyou want to reliably count on the presence of the data)
 OFFLINE_OSM_UPDATE_AFTER_MIGRATE = True
 
+# Whether an exception should be raised if there's a failure on initial data lodaing (setting this to True will prevent Django from starting if there's an error)
+OFFLINE_OSM_UPDATE_AFTER_MIGRATE_EXCEPTION_ON_FAIL = False
+
 # Update period for the Celery worker (in minutes)
 OFFLINE_OSM_UPDATE_INTERVAL = 60*24 # 1 day
 
