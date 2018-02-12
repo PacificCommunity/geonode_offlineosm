@@ -28,12 +28,6 @@ if not hasattr(settings,'OFFLINE_OSM_DATASTORE_NAME'):
     # TODO : see if can't use OGC_SERVER['default']['DATASTORE']
     settings.OFFLINE_OSM_DATASTORE_NAME = "offline_osm"
 
-if not hasattr(settings,'OFFLINE_OSM_UPDATE_AFTER_MIGRATE'):
-    settings.OFFLINE_OSM_UPDATE_AFTER_MIGRATE = True
-
-if not hasattr(settings,'OFFLINE_OSM_UPDATE_AFTER_MIGRATE_EXCEPTION_ON_FAIL'):
-    settings.OFFLINE_OSM_UPDATE_AFTER_MIGRATE_EXCEPTION_ON_FAIL = False
-
 if settings.OFFLINE_OSM_AS_BASE_LAYER:
 
     if not hasattr(settings,'MAP_BASELAYERS'):
